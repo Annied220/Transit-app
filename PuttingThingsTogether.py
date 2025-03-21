@@ -1,5 +1,6 @@
 # No GUI
-# Does not show Closest stop. it does show a stop...
+# need to add more error catching?
+#the search function is weak. see about trying to replace GetLoc with something else?
 
 from geopy.geocoders import Nominatim # https://geopy.readthedocs.io/en/stable/
 import requests # https://www.w3schools.com/python/module_requests.asp
@@ -20,57 +21,55 @@ def get_coordinates(place):
         return location.latitude, location.longitude # outputs Lat and Long for API use.
     else: return None #"Location not found within Connecticut." # outputs nothing
 
-
-
-def get_nearby_bus_stops(lat, lon, api_key, max_distance=1000,
+def get_nearest_bus_stop(lat, lon, api_key, max_distance,
                          stop_filter="Routable", pickup_dropoff_filter="Everything"):
-    """API Get function."""
-    if lat is None or lon is None:  # Prevent API call with invalid coordinates
+    """Fetch nearby bus stops from API and return the nearest one."""
+    if lat is None or lon is None:
         print("Invalid coordinates. Cannot fetch bus stops.")
         return None
 
-    url = "https://external.transitapp.com/v3/public/nearby_stops" # URL for the Transit App API endpoint
-
-    # Headers for the request
-    headers = {"apiKey": api_key } #actual key is put in main
-
-    # Parameters to be sent in the API request (latitude, longitude, max_distance, etc.)
+    url = "https://external.transitapp.com/v3/public/nearby_stops"
+    headers = {"apiKey": api_key}
     params = {
-        "lat": lat, # NEEDED FOR API
-        "lon": lon, # NEEDED FOR API
-        "max_distance": max_distance, # NEEDED FOR API
-        "stop_filter": stop_filter, # extra to help narrow search
-        "pickup_dropoff_filter": pickup_dropoff_filter # extra to help narrow search
+        "lat": lat,
+        "lon": lon,
+        "max_distance": max_distance,
+        "stop_filter": stop_filter,
+        "pickup_dropoff_filter": pickup_dropoff_filter
     }
 
     try:
-            response = requests.get(url, headers=headers, params=params)
-            if response.status_code == 200: # per API documentation, 200 code is working, get data
-                data = response.json()
-                # Ensure "stops" key exists and is non-empty before accessing
-                if "stops" in data and len(data["stops"]) > 0:
-                    first_stop = data["stops"][0]
-                    return first_stop.get("stop_lat"), first_stop.get("stop_lon"), first_stop.get("stop_name")
-                else:
-                    print("No bus stops found.")
-                    return None
-            else:
-                print(f"Error: {response.status_code}")
-                return None
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        return None
+        response = requests.get(url, headers=headers, params=params)
+        if response.status_code == 200:
+            data = response.json()
 
-# User Input
-strUserInputLocation = input("Enter a location (try 'Vance Hall'): ") # Debug = "Vance Hall"#
-# Assigns returned location.latitude,location.longitude to lat,lon
-latitude , longitude = get_coordinates(strUserInputLocation)
+            stops = data.get("stops", [])
+            if not stops: print("No bus stops found."); return None
+            # Find the nearest stop by distance
+            nearest_stop = min(stops, key=lambda stop: stop['distance'])
+            return nearest_stop.get("stop_lat"), nearest_stop.get("stop_lon"), nearest_stop.get("stop_name")
 
-if latitude is not None and longitude is not None:
-    api_key = "[KEY]"  # Replace with actual API key
-    nearby_bus_stops = get_nearby_bus_stops(latitude, longitude, api_key)
+            #for key, value in nearest_stop.items():
+            #    print(f"{key}: {value}")
+            #return nearest_stop # Returns full nearest stop string for debugging
 
-    if nearby_bus_stops:
-        print("Nearby Bus Stop:", nearby_bus_stops)
-else:
-    print("Location not found. Please try again.")
+        else: print(f"Error: {response.status_code}"); return None # error catcher
+    except Exception as e: print(f"An error occurred: {e}"); return None # error catcher
+
+def main():
+    # User Input
+    strUserInputLocation = input("Enter a location (try 'Vance Hall' or 'toad's place'): ") # Debug = "Vance Hall"#
+    # Assigns returned location.latitude,location.longitude to lat,lon
+    latitude , longitude = get_coordinates(strUserInputLocation)
+
+    if latitude is not None and longitude is not None: # if there are values in the these variables from that function
+        real_api_key = "[APIKEYHERE]"  # Replace with actual API key
+        distance = 1000 # for this GUI, this will be either an input or a sliding bar.
+        nearby_bus_stops = get_nearest_bus_stop(latitude, longitude, real_api_key, distance)
+
+        if nearby_bus_stops:
+            print("Nearby Bus Stop:", nearby_bus_stops)
+    else:
+        print("Location not found. Please try again.")
+
+main()
