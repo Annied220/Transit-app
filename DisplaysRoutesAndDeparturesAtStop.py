@@ -1,54 +1,41 @@
-import requests
-from datetime import datetime, UTC
+import requests # needed for API functioning to work.
+from datetime import datetime, UTC, timedelta # https://docs.python.org/3/library/datetime.html#datetime.datetime
 
-API_KEY = "[KEY]"  # Replace with your actual API key
-# Example latitude and longitude
-lattt, lonnn = 45.526168077787894, -73.59506067289408
+# -4 hr to account for EST # converts to 12-hr clock
 
-def get_routes_at_stop(lat, lon, max_distance=150):
+# CHANGELOG!
+# moved date to its own variable
+# Added API reader to keep the API off future code...
+# so that it will just reference a txt file in the same folder named "API.txt"
+
+with open("API.txt", "r") as file: API_KEY = file.read() # Read's API.txt to keep the API out of the code.
+latitude, longitude = 41.53893285402787, -72.80120743546017 #debug - meriden station commuter parking
+# 45.526168077787894, -73.59506067289408 # debug - I do not remember where this is... toad's place?
+
+def get_routes_at_stop(lat, lon, max_distance=1500):
     url = "https://external.transitapp.com/v3/public/nearby_routes"
-    headers = {"apiKey": API_KEY}
-    params = {
-        "lat": lat,
-        "lon": lon,
-        "max_distance": max_distance,
-        "should_update_realtime": True
-    }
-
+    headers = { "apiKey": API_KEY   } # API needs the key to be in the header.
+    params = {  "lat": lat,
+                "lon": lon,
+                "max_distance": max_distance,
+                "should_update_realtime": True  } # only needs lat and lon to work.
     response = requests.get(url, headers=headers, params=params)
-    dave = response.json().get("routes", []) if response.status_code == 200 else []
-    return dave
+    return response.json().get("routes", []) if response.status_code == 200 else [] # if 200, API works. else it didn't.
 
-def main():
-    routes = get_routes_at_stop(lattt, lonnn, max_distance=1500)
-    
-    """
-    # Extract and print EVERY departure times and route short names
+def display_routes_at_stop(): # loops for days.
+    routes = get_routes_at_stop(latitude, longitude, max_distance=1500)
+    print("For Stop - Meriden Union Station:") # hard code this to be the var.
     for route in routes:
-        route_short_name = route.get("route_short_name", "Unknown")
+        strRouteShortName = route.get("route_short_name", "Unknown")
+        nextDeparture = None
         for itinerary in route.get("itineraries", []):
             for schedule in itinerary.get("schedule_items", []):
                 timestamp = schedule["departure_time"]
-                normal_time = datetime.fromtimestamp(timestamp, UTC).strftime('%Y-%m-%d %H:%M:%S')
-                print(f"Route: {route_short_name}, Departure Time: {normal_time}")
-    """
+                if nextDeparture is None or timestamp < nextDeparture: nextDeparture = timestamp
+        if nextDeparture:  # Convert UTC to EST (-5 hours)
+            est_time = datetime.fromtimestamp(nextDeparture, UTC) - timedelta(hours=4)
+            formatted_time = est_time.strftime('%I:%M %p')  # 12-hour format with AM/PM
+            formatted_date = est_time.strftime('%B %d')  # %B is the datetime variable for %m written out.
+            print(f"{formatted_date} Route {strRouteShortName}, Next Departure Time - {formatted_time}")
 
-    print("For Stop 9TTCT:1166 (I do not even remember what the stop name was at this point)...")
-    # Extract and print NEXT departure times and route short names
-    for route in routes:
-            route_short_name = route.get("route_short_name", "Unknown")
-            next_departure = None
-
-            for itinerary in route.get("itineraries", []):
-                for schedule in itinerary.get("schedule_items", []):
-                    timestamp = schedule["departure_time"]
-                    if next_departure is None or timestamp < next_departure:
-                        next_departure = timestamp
-
-            if next_departure:
-                normal_time = datetime.fromtimestamp(next_departure, UTC).strftime('%Y-%m-%d %H:%M:%S')
-                print(f"Route: {route_short_name}, Next Departure Time: {normal_time}")
-
-
-
-main()
+display_routes_at_stop()
