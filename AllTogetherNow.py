@@ -6,19 +6,27 @@ This code gets coordinates from an address and fetches nearby bus stops from the
 """
 
 # Updates:
-# Major UI changes, many sections of code were adjusted or shifted. The application works fine but
-# some comments in main may have been lost or duplicated in translation in this branch.
-# PLEASE CROSS CHECK AND DOUBLE CHECK, WE CAN NOT LOSE DOCUMENTATION! -TH
+# Major UI changes, almost anything related to the GUI has been adjusted to match consistency, many comments have
+# gotten adjustments. Some documentation may be redundant.
+
+# Concerns:
+# This application sometimes takes a few seconds to run functions related to pulling from APIs in search or
+# launching. While this could just be my laptop, there is a chance we are reaching the limits of what
+# tkinter can do on one thread. If it gets out of hand we can look into multithreading (again)
 
 ##################################################   Libraries   ##################################################
-import requests  # makes HTTP requests for API use
-from geopy.geocoders import Nominatim  # get location details from coordinates
-from geopy.distance import geodesic  # used to calculate distance between two locations.
-import tkinter as tk  # creates GUI
-from tkinter import messagebox, ttk  # allows the use of the messagebox; ttk is used for improved widgets.
-from tkintermapview import TkinterMapView  # used for the map.
-from PIL import Image, ImageTk  # image processing with pillow.
-from datetime import datetime, timezone, UTC, timedelta
+
+import requests # makes HTTP requests for API use # https://www.w3schools.com/python/module_requests.asp
+from geopy.geocoders import Nominatim # get location details from coordinates # https://geopy.readthedocs.io/en/stable/
+from geopy.distance import geodesic #used in line 175 to calc the distance between the 2 locations to get distance.
+import tkinter as tk # creates GUI
+from tkinter import messagebox, ttk # allows the use of the message box, tkk fixes the dropout map selector.
+#from gmpy2 import RoundUp # instead of importing this, we used "int() to convert the float to an int.
+from tkintermapview import TkinterMapView # used for the map.
+from PIL import Image, ImageTk #pillow. python image Library (PIL) # https://pypi.org/project/pillow/
+#import threading # used in past version to run all parts of a for loop at the same time.
+#import time # used prior, replaced with datetime
+from datetime import datetime,timezone,UTC,timedelta #https://docs.python.org/3/library/datetime.html#datetime.datetime
 
 #other geopy info
 #    https://stackoverflow.com/questions/60928516/get-address-from-given-coordinate-using-python
@@ -27,6 +35,7 @@ from datetime import datetime, timezone, UTC, timedelta
 #    https://geocoder.readthedocs.io/results.html
 
 #################################################     API.TXT     #################################################
+
 # tries to read API.txt. this is to prevent the API key from being hard coded into program.
 def api_key():
     """Reads the API key from a file named 'API.txt'."""
@@ -53,6 +62,7 @@ def max_distance():
 # this is an unnecessary addition to the scope - but might be fun
 
 ##################################################     GeoPy     ##################################################
+
 # try to call geopy
 def get_coordinates(place):
     """Uses geopy to get latitude and longitude coordinates for a given place name."""
@@ -74,6 +84,7 @@ def get_coordinates(place):
     return None # outputs nothing
 
 #############################################     NEARBY STOP - API     #############################################
+
 # tries to call transitApp API
 def get_nearby_bus_stops(lat, lon, stop_filter="Routable", pickup_dropoff_filter="Everything"):
     """Sends GET request to the Transit API to fetch nearby bus stops."""
@@ -111,6 +122,7 @@ def get_nearby_bus_stops(lat, lon, stop_filter="Routable", pickup_dropoff_filter
 
 
 ############################################     ROUTES AT STOP - API     ############################################
+
 def get_routes_at_stop(lat, lon):
     """Fetches route info for a given bus stop location."""
     url = "https://external.transitapp.com/v3/public/nearby_routes"
@@ -132,6 +144,7 @@ def get_routes_at_stop(lat, lon):
     return []
 
 ############################################     DISTANCE CALCULATION     ############################################
+
 def calculate_distance(lat1, lon1, lat2, lon2):
     """Calculates the distance between two locations/between user and stop location."""
     loc1 = (lat1, lon1)
@@ -141,6 +154,7 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     return meters, feet
 
 #################################################     THE GUI     #################################################
+
 class BusStopApp:
     def __init__(self):
         # Main window parameters
@@ -289,8 +303,8 @@ class BusStopApp:
     def search_location(self):
         """Clear previous labels and markers when the search button is pressed, then set new values."""
         self.label_result.config(text="")
-        self.label_distance.config(text="Distance")
-        self.label_next_bus.config(text="Next Three Departures:")
+        self.label_distance.config(text="Please wait...")
+        self.label_next_bus.config(text="Gathering data.")
         self.label_timer.config(text="")
         if self.user_marker:
             self.map.delete(self.user_marker)
