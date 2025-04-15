@@ -45,13 +45,12 @@ def max_distance():
     """Returns the maximum distance (in meters) to search for bus stops."""
     return 1000 # API default is 150
 # this is not required for the APIs, or our code, but it is useful to define if we were to add more functionality.
-"""
+
 # could add a function that separates the steps, creates a circle around the users set location based on this value,
 # and have it display every stop and their distance from the user. then, when they select it, it pushes the stop info.
 # we could attach this variable to a sliding bar,
 # that sliding bar could change the size of a circle in the GUI map to show radius
 # this is an unnecessary addition to the scope - but might be fun
-"""
 
 ##################################################     GeoPy     ##################################################
 # try to call geopy
@@ -106,10 +105,10 @@ def get_nearby_bus_stops(lat, lon, stop_filter="Routable", pickup_dropoff_filter
         return f"[API Request Error] {e}"
     return None
 
-"""
-I do not think the about print codes are doing much of anything now that we are in the GUI.
-we need to replace this with a return (same thing the print does) and have it go to one of the labels or a messagebox.
-"""
+
+# I do not think the about print codes are doing much of anything now that we are in the GUI.
+# need to replace this with a return (same thing the print does) and have it go to one of the labels or a messagebox.
+
 
 ############################################     ROUTES AT STOP - API     ############################################
 def get_routes_at_stop(lat, lon):
