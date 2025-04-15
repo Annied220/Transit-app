@@ -5,6 +5,11 @@
 This code gets coordinates from an address and fetches nearby bus stops from the Transit App API.
 """
 
+# Updates:
+# Major UI changes, many sections of code were adjusted or shifted. The application works fine but
+# some comments in main may have been lost or duplicated in translation in this branch.
+# PLEASE CROSS CHECK AND DOUBLE CHECK, WE CAN NOT LOSE DOCUMENTATION! -TH
+
 ##################################################   Libraries   ##################################################
 import requests  # makes HTTP requests for API use
 from geopy.geocoders import Nominatim  # get location details from coordinates
@@ -15,7 +20,14 @@ from tkintermapview import TkinterMapView  # used for the map.
 from PIL import Image, ImageTk  # image processing with pillow.
 from datetime import datetime, timezone, UTC, timedelta
 
+#other geopy info
+#    https://stackoverflow.com/questions/60928516/get-address-from-given-coordinate-using-python
+#    https://geopy.readthedocs.io/en/stable/#module-geopy.geocoders
+#    https://github.com/DenisCarriere/geocoder/blob/master/README.md
+#    https://geocoder.readthedocs.io/results.html
+
 #################################################     API.TXT     #################################################
+# tries to read API.txt. this is to prevent the API key from being hard coded into program.
 def api_key():
     """Reads the API key from a file named 'API.txt'."""
     try:
@@ -25,47 +37,65 @@ def api_key():
                 raise ValueError("API key is empty.")
             return API_KEY
     except (FileNotFoundError, ValueError) as e:
-        print(f"[API Key Error] {e}")
-        exit()
+        print(f"[API Key Error] {e}") # if there is an API error, prints issue in IDE.
+        exit() # if there is an API error, closes the program.
 
+# because there are 2 APIs that use this, make it a function.
 def max_distance():
     """Returns the maximum distance (in meters) to search for bus stops."""
-    return 1000
+    return 1000 # API default is 150
+# this is not required for the APIs, or our code, but it is useful to define if we were to add more functionality.
+"""
+# could add a function that separates the steps, creates a circle around the users set location based on this value,
+# and have it display every stop and their distance from the user. then, when they select it, it pushes the stop info.
+# we could attach this variable to a sliding bar,
+# that sliding bar could change the size of a circle in the GUI map to show radius
+# this is an unnecessary addition to the scope - but might be fun
+"""
 
 ##################################################     GeoPy     ##################################################
+# try to call geopy
 def get_coordinates(place):
     """Uses geopy to get latitude and longitude coordinates for a given place name."""
     try:
-        geolocator = Nominatim(user_agent="GetLoc")
+        geolocator = Nominatim(user_agent="GetLoc") # https://www.youtube.com/watch?v=mhTkaH2YuAc
         location = geolocator.geocode(place,
                                       country_codes="us",  # Restrict search to the US
+                                      # Bounding box for Connecticut
                                       viewbox=[(42.050587, -73.727775), (40.950943, -71.787220)],
-                                      bounded=True)
+                                      bounded=True) # Ensures results stay within the view box
+        # everything here is learned from the documentation
+        # https://geocoder.readthedocs.io/results.html
         if location:
+            # print((location.latitude, location.longitude)) # Debugging. Outputs Lat and Lon.
+            # print(location.raw) # Debugging. # full data pull
             return location.latitude, location.longitude
     except Exception as e:
-        print(f"[Geolocation Error] {e}")
-    return None
+        print(f"[Geolocation Error] {e}") # pushes error
+    return None # outputs nothing
 
 #############################################     NEARBY STOP - API     #############################################
+# tries to call transitApp API
 def get_nearby_bus_stops(lat, lon, stop_filter="Routable", pickup_dropoff_filter="Everything"):
     """Sends GET request to the Transit API to fetch nearby bus stops."""
     url = "https://external.transitapp.com/v3/public/nearby_stops"
-    headers = {"apiKey": api_key()}
-    params = {
-        "lat": lat,
-        "lon": lon,
-        "max_distance": max_distance(),
-        "stop_filter": stop_filter,
-        "pickup_dropoff_filter": pickup_dropoff_filter
+    headers = {"apiKey": api_key()} # Headers for the request
+    params = { # Parameters to be sent in the API request
+        "lat": lat, # Latitude of the location. REQUIRED
+        "lon": lon, # Longitude of the location. REQUIRED
+        "max_distance": max_distance(), # helps limit search
+        "stop_filter": stop_filter, # helps limit search
+        "pickup_dropoff_filter": pickup_dropoff_filter # helps limit search
     }
     try:
-        response = requests.get(url, headers=headers, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            stops = data.get("stops", [])
+        response = requests.get(url, headers=headers, params=params, timeout=10) #timeout times out after 10 seconds.
+        if response.status_code == 200: # 200 code is a successful call per their API docs
+            data = response.json() # this is the raw data from the API.
+            # print(data)  #debugging
+            stops = data.get("stops", []) #pulls the stop info from the json
+            # Ensure "stops" key exists and is non-empty before accessing
             if not stops:
-                return None
+                return None #use to: print("No nearby bus stops found.") now we are on the GUI.
             closest_stop = min(stops, key=lambda stop: stop.get("distance", float("inf")))
             return (closest_stop.get("stop_lat"),
                     closest_stop.get("stop_lon"),
@@ -75,6 +105,11 @@ def get_nearby_bus_stops(lat, lon, stop_filter="Routable", pickup_dropoff_filter
     except Exception as e:
         return f"[API Request Error] {e}"
     return None
+
+"""
+I do not think the about print codes are doing much of anything now that we are in the GUI.
+we need to replace this with a return (same thing the print does) and have it go to one of the labels or a messagebox.
+"""
 
 ############################################     ROUTES AT STOP - API     ############################################
 def get_routes_at_stop(lat, lon):
@@ -99,7 +134,7 @@ def get_routes_at_stop(lat, lon):
 
 ############################################     DISTANCE CALCULATION     ############################################
 def calculate_distance(lat1, lon1, lat2, lon2):
-    """Calculates the distance between two locations."""
+    """Calculates the distance between two locations/between user and stop location."""
     loc1 = (lat1, lon1)
     loc2 = (lat2, lon2)
     meters = geodesic(loc1, loc2).meters
@@ -290,19 +325,20 @@ class BusStopApp:
             return
 
         stop_lat, stop_lon, stop_name = stop_info
-        # Handles stop location specifically
+        # Handles map location specifically
         if self.bus_marker:
             self.map.delete(self.bus_marker)
         self.bus_marker = self.map.set_marker(stop_lat, stop_lon, text=f"   Stop Location: \n {stop_name}")
         self.label_result.config(text=f"Nearest Bus Stop: \n {stop_name}")
 
-        # Set stop positioning
+        # Set map positioning
         distance_meters, distance_feet = calculate_distance(user_lat, user_lon, stop_lat, stop_lon)
         self.label_distance.config(text=f" {distance_meters:.2f} m \n {distance_feet:.2f} ft")
         mid_lat = (user_lat + stop_lat) / 2
         mid_lon = (user_lon + stop_lon) / 2
         self.map.set_position(mid_lat, mid_lon)
 
+        # Set Zoom
         if distance_meters < 50:
             zoom_level = 20
         elif distance_meters < 100:
@@ -319,11 +355,13 @@ class BusStopApp:
             zoom_level = 14
         self.map.set_zoom(zoom_level)
 
+        # if no route, label is equal to 'no route'
         routes = get_routes_at_stop(stop_lat, stop_lon)
         if not routes:
             self.label_next_bus.config(text="No routes found.")
             return
 
+        # wizard magic...
         upcoming_routes = []
         for route in routes:
             route_short_name = route.get("route_short_name", "Unknown")
@@ -339,14 +377,20 @@ class BusStopApp:
                     "departure_time": next_time
                 })
 
+        # if no wizard magic, give no departure details
         if not upcoming_routes:
             self.label_next_bus.config(text="No departures found.")
             return
 
+        # different sort of wizard magic
         upcoming_routes.sort(key=lambda r: r["departure_time"])
         self.next_departure_unix = upcoming_routes[0]["departure_time"]
-        self.update_timer()
+        self.update_timer() # Start the countdown!
 
+        # loops through the stop info and pulls of the information needed to be displayed...
+        # more wizard magic.
+        # TH says... "msg_3" is a bit unclear but this seems like this is a string to handle
+        # the next three stops in text.
         msg_3 = ""
         self.all_departures = ""
         for i, route_info in enumerate(upcoming_routes[:-1]):
@@ -359,6 +403,7 @@ class BusStopApp:
             self.all_departures += line + "\n"
         self.label_next_bus.config(text="Next Three Departures:\n" + msg_3)
 
+    # starts the countdown timer to when the buses arrive.
     def update_timer(self):
         def countdown():
             if self.next_departure_unix is None:
@@ -375,12 +420,14 @@ class BusStopApp:
                 self.label_timer.after(1000, countdown)
         countdown()
 
+    # creates the messagebox when it is pressed to display all the stop info.
     def show_all_departures(self):
         if self.all_departures:
             messagebox.showinfo("All Departures", self.all_departures)
         else:
             messagebox.showinfo("All Departures", "No departure data available.")
 
+#calls programming loop.
 if __name__ == "__main__":
     app = BusStopApp()
     tk.mainloop()
