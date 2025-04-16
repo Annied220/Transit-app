@@ -158,6 +158,8 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 class BusStopApp:
     def __init__(self):
         # Main window parameters
+        self._add_placeholder = None
+        self._clear_placeholder = None
         self.root = tk.Tk()
         self.root.title("Group Three  -  Nearby Bus Stop Info  -  Powered by Transit App")
         self.root.configure(bg="#1E1E1E")
@@ -208,8 +210,26 @@ class BusStopApp:
                               highlightthickness=1,
                               highlightbackground="white",
                               highlightcolor="white")
+        self.entry.insert(0, "Type here...")  # Insert placeholder text initially
         self.entry.grid(row=0, column=2, sticky="nw", ipady=4, padx=20, pady=(19, 0))
+        self.entry.bind("<FocusIn>", self._clear_placeholder)
+        self.entry.bind("<FocusOut>", self._add_placeholder)
         self.entry.bind("<Return>", lambda event: self.search_location())
+
+        # Define helper methods for placeholder management
+        def _clear_placeholder(event):
+            if event.widget.get() == "Type here...":
+                event.widget.delete(0, "end")
+                event.widget.config(fg="white")  # Change to normal text color
+
+        def _add_placeholder(event):
+            if not event.widget.get():  # If the field is empty after focus out
+                event.widget.insert(0, "Type here...")
+                event.widget.config(fg="grey")  # Set back the placeholder color
+
+        # Bind the helper methods to your entry widget by making them methods of your class
+        self.entry.bind("<FocusIn>", _clear_placeholder)
+        self.entry.bind("<FocusOut>", _add_placeholder)
 
         # Search button GUI location (unchanged from functionality)
         self.search_button = tk.Button(self.root,
@@ -302,7 +322,7 @@ class BusStopApp:
 
     def search_location(self):
         """Clear previous labels and markers when the search button is pressed, then set new values."""
-        self.label_result.config(text="Loading...")
+        self.label_result.config(text="\u23F3 Loading...")
         self.label_distance.config(text="")
         self.label_next_bus.config(text="")
         self.label_timer.config(text="")
