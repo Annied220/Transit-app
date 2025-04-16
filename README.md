@@ -4,7 +4,7 @@ The API key is distributed privately among developers, you may also provide your
 
 Built using graphics libraries in Python and external APIs for data retreival.
 
-Does not have resizeable UI yet, DO NOT TRY TO IMPLEMENT THIS ON MAIN, make a new branch called resize-ui and do it there
+Does not have resizeable UI yet, DO NOT PUSH DANGEROUS OR HUGE CHANGES TO MAIN, check with everyone else first.
 
 ISSUES WHICH NEED TO BE FIXED WITH RESIZEABLE WINDOW CHANGE:
 Placeholder text in the search entry is causing the UI elements to noticably shift slightly, while this is most likely an issue with offsets with our hacky method of implemting the placeholder text
