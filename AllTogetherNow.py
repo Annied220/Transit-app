@@ -302,9 +302,9 @@ class BusStopApp:
 
     def search_location(self):
         """Clear previous labels and markers when the search button is pressed, then set new values."""
-        self.label_result.config(text="")
-        self.label_distance.config(text="Please wait...")
-        self.label_next_bus.config(text="Gathering data.")
+        self.label_result.config(text="Loading...")
+        self.label_distance.config(text="")
+        self.label_next_bus.config(text="")
         self.label_timer.config(text="")
         if self.user_marker:
             self.map.delete(self.user_marker)
