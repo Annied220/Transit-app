@@ -159,6 +159,7 @@ class BusStopApp:
     def __init__(self):
         # Main window parameters
         self.root = tk.Tk()
+        self.root.withdraw() # Hide blank GUI (screw Tkinter)
         self.root.title("Group Three  -  Nearby Bus Stop Info  -  Powered by Transit App")
         self.root.configure(bg="#1E1E1E")
         #self.root.resizable(width=False, height=False)
@@ -307,6 +308,7 @@ class BusStopApp:
         self.root.bind("<Configure>", self.on_configure)  # bind our new debounced method
 
         self.root.update_idletasks()  # make sure geometry info is up to date
+        self.root.deiconify() # Show the window fully rendered now
         self.initial_geometry = self.root.geometry()  # e.g. "800x600+X+Y"
         self.current_state = self.root.state()  # e.g. "normal"
 
