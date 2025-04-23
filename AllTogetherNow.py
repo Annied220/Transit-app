@@ -6,13 +6,11 @@ This code gets coordinates from an address and fetches nearby bus stops from the
 """
 
 # Updates:
-# Major UI changes, almost anything related to the GUI has been adjusted to match consistency, many comments have
-# gotten adjustments. Some documentation may be redundant.
+# Resizeable window, patched all outstanding issues and visual quirks. Hopefully this build sticks it.
 
 # Concerns:
-# This application sometimes takes a few seconds to run functions related to pulling from APIs in search or
-# launching. While this could just be my laptop, there is a chance we are reaching the limits of what
-# tkinter can do on one thread. If it gets out of hand we can look into multithreading (again)
+# Application is functional and considered feature complete. Doing final pass on WEEK 14 to determine there
+# are no more issues prior to presentation and will be testing the application on a school computer.
 
 ##################################################   Libraries   ##################################################
 
@@ -309,6 +307,10 @@ class BusStopApp:
 
         self.root.update_idletasks()  # make sure geometry info is up to date
         self.root.deiconify() # Show the window fully rendered now
+        # ─── HACKY TILE-RELOAD ─────────────────────────────────────────────
+        # force a re-set of the OSM tiles a moment after launch
+        # selected_option is tk.StringVar for the dropdown
+        self.root.after(500, lambda: self.change_tile_server(selected_option.get()))
         self.initial_geometry = self.root.geometry()  # e.g. "800x600+X+Y"
         self.current_state = self.root.state()  # e.g. "normal"
 
