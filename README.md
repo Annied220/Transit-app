@@ -4,7 +4,8 @@ The API key is distributed privately among developers, you may also provide your
 
 Built using graphics libraries in Python and external APIs for data retreival.
 
-Please look through the entire program before the presentation and skim through the documentation.
+Doing final pass during week 14. Current build dated to 4/23/2025.
+ABSOLUTELY DO NOT PUSH ANY MAJOR CHANGES WITHOUT CONSULTING ME PERSONALLY.
 -TH
 
 THINGS TO CONSIDER:
